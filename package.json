@@ -22,20 +22,13 @@
     "srisum": "srisum lib/eos.*",
     "prepublishOnly": "npm run build && npm run test_lib && npm run minimize && npm run docs && npm run srisum"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/EOSIO/eosjs.git"
-  },
+  
   "keywords": [
-    "EOS",
+    "DATX",
     "Blockchain"
   ],
   "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/EOSIO/eosjs/issues"
-  },
-  "homepage": "https://github.com/EOSIO/eosjs#readme",
   "devDependencies": {
     "babel-cli": "6.26.0",
     "babel-core": "6.26.3",
