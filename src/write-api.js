@@ -51,8 +51,8 @@ function writeApiGen(Network, network, structs, config, abis) {
   /**
     Immedate send contract actions.
 
-    @example eos.contract('mycontract', [options], [callback])
-    @example eos.contract('mycontract').then(mycontract => mycontract.myaction(...))
+    @example datx.contract('mycontract', [options], [callback])
+    @example datx.contract('mycontract').then(mycontract => mycontract.myaction(...))
   */
   merge.contract = (...args) => {
     const {params, options, returnPromise, callback} =
@@ -104,8 +104,8 @@ function WriteApi(Network, network, config, Transaction) {
 
       const abiPromises = []
 
-      // Eos contract operations are cached (efficient and offline transactions)
-      const cachedCode = new Set(['eosio', 'datxos.token', 'eosio.null'])
+      // DATx contract operations are cached (efficient and offline transactions)
+      const cachedCode = new Set(['datxos', 'datxos.token', 'datxos.null'])
       accounts.forEach(account => {
         if(!cachedCode.has(account)) {
           abiPromises.push(config.abiCache.abiAsync(account))
@@ -315,13 +315,13 @@ function WriteApi(Network, network, config, Transaction) {
       messageList.push(ret)
     }
 
-    // merges can be an object of functions (as in the main eos contract)
+    // merges can be an object of functions (as in the main datx contract)
     // or an object of contract names with functions under those
     for(const key in merges) {
       const value = merges[key]
       const variableName = key.replace(/\./, '_')
       if(typeof value === 'function') {
-        // Native operations (eos contract for example)
+        // Native operations (datx contract for example)
         messageCollector[variableName] = wrap(value)
 
       } else if(typeof value === 'object') {

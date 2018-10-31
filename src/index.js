@@ -1,6 +1,6 @@
 const ecc = require('eosjs-ecc')
 const Fcbuffer = require('fcbuffer')
-const EosApi = require('eosjs-api')
+const DATxApi = require('eosjs-api')
 const assert = require('assert')
 
 const Structs = require('./structs')
@@ -10,10 +10,10 @@ const format = require('./format')
 const schema = require('./schema')
 
 const token = require('./schema/datxos.token.abi.json')
-const system = require('./schema/eosio.system.abi.json')
-const eosio_null = require('./schema/eosio.null.abi.json')
+const system = require('./schema/datxos.system.abi.json')
+const datxos_null = require('./schema/datxos.null.abi.json')
 
-const Eos = (config = {}) => {
+const DATx = (config = {}) => {
   const configDefaults = {
     httpEndpoint: 'http://127.0.0.1:8888',
     debug: false,
@@ -36,21 +36,21 @@ const Eos = (config = {}) => {
 
   applyDefaults(config, configDefaults)
   applyDefaults(config.logger, configDefaults.logger)
-  return createEos(config)
+  return createDATx(config)
 }
 
-module.exports = Eos
+module.exports = DATx
 
 Object.assign(
-  Eos,
+  DATx,
   {
     version: '16.0.0',
     modules: {
       format,
-      api: EosApi,
+      api: DATxApi,
       ecc,
       json: {
-        api: EosApi.api,
+        api: DATxApi.api,
         schema
       },
       Fcbuffer
@@ -58,27 +58,27 @@ Object.assign(
 
     /** @deprecated */
     Testnet: function (config) {
-      console.error('deprecated, change Eos.Testnet(..) to just Eos(..)')
-      return Eos(config)
+      console.error('deprecated, change DATx.Testnet(..) to just DATx(..)')
+      return DATx(config)
     },
 
     /** @deprecated */
     Localnet: function (config) {
-      console.error('deprecated, change Eos.Localnet(..) to just Eos(..)')
-      return Eos(config)
+      console.error('deprecated, change DATx.Localnet(..) to just DATx(..)')
+      return DATx(config)
     }
   }
 )
 
-function createEos(config) {
-  const network = config.httpEndpoint != null ? EosApi(config) : null
+function createDATx(config) {
+  const network = config.httpEndpoint != null ? DATxApi(config) : null
   config.network = network
 
   const abis = []
   const abiCache = AbiCache(network, config)
-  abis.push(abiCache.abi('eosio.null', eosio_null))
+  abis.push(abiCache.abi('datxos.null', datxos_null))
   abis.push(abiCache.abi('datxos.token', token))
-  abis.push(abiCache.abi('eosio', system))
+  abis.push(abiCache.abi('datxos', system))
 
   if(!config.chainId) {
     config.chainId = 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f'
@@ -96,9 +96,9 @@ function createEos(config) {
     assert.equal(typeof config.mockTransactions, 'function', 'config.mockTransactions')
   }
   const {structs, types, fromBuffer, toBuffer} = Structs(config)
-  const eos = mergeWriteFunctions(config, EosApi, structs, abis)
+  const datx = mergeWriteFunctions(config, DATxApi, structs, abis)
 
-  Object.assign(eos, {
+  Object.assign(datx, {
     config: safeConfig(config),
     fc: {
       structs,
@@ -107,17 +107,17 @@ function createEos(config) {
       toBuffer,
       abiCache
     },
-    // Repeat of static Eos.modules, help apps that use dependency injection
+    // Repeat of static DATx.modules, help apps that use dependency injection
     modules: {
       format
     }
   })
 
   if(!config.signProvider) {
-    config.signProvider = defaultSignProvider(eos, config)
+    config.signProvider = defaultSignProvider(datx, config)
   }
 
-  return eos
+  return datx
 }
 
 /**
@@ -157,17 +157,17 @@ function safeConfig(config) {
   name conflicts.
 
   @arg {object} config.network - read-only api calls
-  @arg {object} EosApi - api[EosApi] read-only api calls
+  @arg {object} DATxApi - api[DATxApi] read-only api calls
   @return {object} - read and write method calls (create and sign transactions)
   @throw {TypeError} if a funciton name conflicts
 */
-function mergeWriteFunctions(config, EosApi, structs, abis) {
+function mergeWriteFunctions(config, DATxApi, structs, abis) {
   const {network} = config
 
   const merge = Object.assign({}, network)
 
-  const writeApi = writeApiGen(EosApi, network, structs, config, abis)
-  throwOnDuplicate(merge, writeApi, 'Conflicting methods in EosApi and Transaction Api')
+  const writeApi = writeApiGen(DATxApi, network, structs, config, abis)
+  throwOnDuplicate(merge, writeApi, 'Conflicting methods in DATxApi and Transaction Api')
   Object.assign(merge, writeApi)
 
   return merge
@@ -189,10 +189,10 @@ function throwOnDuplicate(o1, o2, msg) {
   If only one key is available, the blockchain API calls are skipped and that
   key is used to sign the transaction.
 */
-const defaultSignProvider = (eos, config) => async function({
+const defaultSignProvider = (datx, config) => async function({
   sign, buf, transaction, optionsKeyProvider
 }) {
-  // optionsKeyProvider is a per-action key: await eos.someAction('user2' .., {keyProvider: privateKey2})
+  // optionsKeyProvider is a per-action key: await datx.someAction('user2' .., {keyProvider: privateKey2})
   const keyProvider = optionsKeyProvider ? optionsKeyProvider : config.keyProvider
 
   if(!keyProvider) {
@@ -216,7 +216,7 @@ const defaultSignProvider = (eos, config) => async function({
       // normalize format (WIF => PVT_K1_base58privateKey)
       return {private: ecc.PrivateKey(key).toString()}
     } catch(e) {
-      // normalize format (EOSKey => PUB_K1_base58publicKey)
+      // normalize format (DATXKey => PUB_K1_base58publicKey)
       return {public: ecc.PublicKey(key).toString()}
     }
     assert(false, 'expecting public or private keys from keyProvider')
@@ -257,7 +257,7 @@ const defaultSignProvider = (eos, config) => async function({
 
   const pubkeys = Array.from(keyMap.keys())
 
-  return eos.getRequiredKeys(transaction, pubkeys).then(({required_keys}) => {
+  return datx.getRequiredKeys(transaction, pubkeys).then(({required_keys}) => {
     if(!required_keys.length) {
       throw new Error('missing required keys for ' + JSON.stringify(transaction))
     }
@@ -265,7 +265,7 @@ const defaultSignProvider = (eos, config) => async function({
     const pvts = [], missingKeys = []
 
     for(let requiredKey of required_keys) {
-      // normalize (EOSKey.. => PUB_K1_Key..)
+      // normalize (DATXKey.. => PUB_K1_Key..)
       requiredKey = ecc.PublicKey(requiredKey).toString()
 
       const wif = keyMap.get(requiredKey)

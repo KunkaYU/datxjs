@@ -11,7 +11,7 @@ const {
   printAsset, parseAsset
 } = require('./format')
 
-/** Configures Fcbuffer for EOS specific structs and types. */
+/** Configures Fcbuffer for DATX specific structs and types. */
 module.exports = (config = {}, extendedSchema) => {
   const structLookup = (lookupName, account) => {
     const cache = config.abiCache.abi(account)
@@ -35,7 +35,7 @@ module.exports = (config = {}, extendedSchema) => {
     throw new Error(`Missing ABI action: ${lookupName}`)
   }
 
-  // If nodeos does not have an ABI setup for a certain action.type, it will throw
+  // If noddatx does not have an ABI setup for a certain action.type, it will throw
   // an error: `Invalid cast from object_type to string` .. forceActionDataHex
   // may be used to until native ABI is added or fixed.
   const forceActionDataHex = config.forceActionDataHex != null ?
@@ -49,7 +49,7 @@ module.exports = (config = {}, extendedSchema) => {
     config.override
   )
 
-  const eosTypes = {
+  const datxTypes = {
     name: ()=> [Name],
     public_key: () => [variant(PublicKeyEcc)],
 
@@ -63,7 +63,7 @@ module.exports = (config = {}, extendedSchema) => {
     signature: () => [variant(SignatureType)]
   }
 
-  const customTypes = Object.assign({}, eosTypes, config.customTypes)
+  const customTypes = Object.assign({}, datxTypes, config.customTypes)
   config = Object.assign({override}, {customTypes}, config)
 
   // Do not sort transaction actions
@@ -84,7 +84,7 @@ module.exports = (config = {}, extendedSchema) => {
 }
 
 /**
-  Name eos::types native.hpp
+  Name datx::types native.hpp
 */
 const Name = (validation) => {
   return {
@@ -174,7 +174,7 @@ const PublicKeyEcc = (validation) => {
 
     toObject (value) {
       if (validation.defaults && value == null) {
-        const keyPrefix = validation.keyPrefix ? validation.keyPrefix : 'EOS'
+        const keyPrefix = validation.keyPrefix ? validation.keyPrefix : 'DATX'
         return keyPrefix + '6MRy..'
       }
       return value
@@ -468,7 +468,7 @@ const SignatureType = (validation, baseTypes) => {
 }
 
 const authorityOverride = config => ({
-  /** shorthand `EOS6MRyAj..` */
+  /** shorthand `DATX6MRyAj..` */
   'authority.fromObject': (value) => {
     if(PublicKey.fromString(value, config.keyPrefix)) {
       return {
@@ -508,7 +508,7 @@ const abiOverride = structLookup => ({
   },
 
   'setabi.abi.appendByteBuffer': ({fields, object, b}) => {
-    const ser = structLookup('abi_def', 'eosio')
+    const ser = structLookup('abi_def', 'datxos')
     const b2 = new ByteBuffer(ByteBuffer.DEFAULT_CAPACITY, ByteBuffer.LITTLE_ENDIAN)
 
     if(Buffer.isBuffer(object.abi)) {
